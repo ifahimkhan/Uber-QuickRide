@@ -1,3 +1,5 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -19,7 +21,18 @@ android {
     }
 
     buildTypes {
+//        debug {
+//            buildConfigField("String", "MAPS_API_KEY", "\"${project.property("MAPS_API_KEY")}\"")
+//        }
+        debug {
+            resValue(
+                "string",
+                "MAPS_API_KEY",
+                gradleLocalProperties(rootDir,project.providers).getProperty("MAPS_API_KEY")
+            )
+        }
         release {
+//            buildConfigField("String", "MAPS_API_KEY", "\"${project.property("MAPS_API_KEY")}\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
