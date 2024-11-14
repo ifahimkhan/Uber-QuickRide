@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Uber-QuickRide"
 include(":app")
- 
+include(":simulator")

@@ -32,6 +32,11 @@ android {
             )
         }
         release {
+            resValue(
+                "string",
+                "MAPS_API_KEY",
+                gradleLocalProperties(rootDir,project.providers).getProperty("MAPS_API_KEY")
+            )
 //            buildConfigField("String", "MAPS_API_KEY", "\"${project.property("MAPS_API_KEY")}\"")
             isMinifyEnabled = false
             proguardFiles(
@@ -62,6 +67,7 @@ dependencies {
     implementation(libs.play.services.maps)
     implementation("com.google.android.libraries.places:places:3.3.0")
     implementation ("com.google.maps:google-maps-services:0.19.0")
+    implementation(project(":simulator"))
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

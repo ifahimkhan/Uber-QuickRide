@@ -73,8 +73,8 @@ object Simulator {
         dropLocation: LatLng,
         webSocketListener: WebSocketListener
     ) {
-        this.pickUpLocation = pickUpLocation
-        this.dropLocation = dropLocation
+        Simulator.pickUpLocation = pickUpLocation
+        Simulator.dropLocation = dropLocation
 
         val randomOperatorForLat = (0..1).random()
         val randomOperatorForLng = (0..1).random()
@@ -95,7 +95,7 @@ object Simulator {
         val directionsApiRequest = DirectionsApiRequest(geoApiContext)
         directionsApiRequest.mode(TravelMode.DRIVING)
         directionsApiRequest.origin(bookedCabCurrentLocation)
-        directionsApiRequest.destination(this.pickUpLocation)
+        directionsApiRequest.destination(Simulator.pickUpLocation)
         directionsApiRequest.setCallback(object : PendingResult.Callback<DirectionsResult> {
             override fun onResult(result: DirectionsResult) {
                 Log.d(TAG, "onResult : $result")
