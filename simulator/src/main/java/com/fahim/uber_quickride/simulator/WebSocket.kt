@@ -37,10 +37,11 @@ class WebSocket(private var webSocketListener: WebSocketListener) {
                 )
             }
         }
-        fun disconnect() {
-            Simulator.stopTimer()
-            webSocketListener.onDisconnect()
 
-        }
+    }
+    fun disconnect() {
+        Simulator.stopTimer()
+        webSocketListener.onDisconnect()
+
     }
 }
