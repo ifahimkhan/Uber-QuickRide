@@ -14,10 +14,10 @@ import com.fahim.uber_quickride.simulator.WebSocketListener
 import com.fahim.uber_quickride.utils.Constants
 import com.fahim.uber_quickride.utils.MapUtils
 import com.fahim.uber_quickride.utils.PermissionUtils
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -40,6 +40,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, WebSocketListener 
     private lateinit var webSocket: WebSocket
     private var currentLatLng: LatLng? = null
     private val nearbyCabMarkerList = arrayListOf<Marker>()
+    private var fusedLocationProviderClient: FusedLocationProviderClient? = null
+    private lateinit var locationCallback: LocationCallback
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,6 +85,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, WebSocketListener 
 
     override fun onDestroy() {
         webSocket.disconnect()
+        fusedLocationProviderClient?.removeLocationUpdates(locationCallback)
         super.onDestroy()
     }
 
@@ -158,7 +161,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, WebSocketListener 
     }
 
     private fun setUpLocationListener() {
-        val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+        fusedLocationProviderClient = FusedLocationProviderClient(this)
         // for getting the current location update after every 2 seconds
         val locationRequest = LocationRequest().setInterval(2000).setFastestInterval(2000)
             .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
@@ -172,24 +175,26 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, WebSocketListener 
         ) {
             return
         }
-        fusedLocationProviderClient.requestLocationUpdates(
-            locationRequest,
-            object : LocationCallback() {
-                override fun onLocationResult(locationResult: LocationResult) {
-                    super.onLocationResult(locationResult)
-                    if (currentLatLng == null) {
-                        for (location in locationResult.locations) {
-                            currentLatLng = LatLng(location.latitude, location.longitude)
-                            enableMyLocationOnMap()
-                            moveCamera(currentLatLng)
-                            animateCamera(currentLatLng)
-                            requestNearbyCabs()
-                        }
+        locationCallback = object : LocationCallback() {
+
+            override fun onLocationResult(locationResult: LocationResult) {
+                super.onLocationResult(locationResult)
+                if (currentLatLng == null) {
+                    for (location in locationResult.locations) {
+                        currentLatLng = LatLng(location.latitude, location.longitude)
+                        enableMyLocationOnMap()
+                        moveCamera(currentLatLng)
+                        animateCamera(currentLatLng)
+                        requestNearbyCabs()
                     }
-                    // Few more things we can do here:
-                    // For example: Update the location of user on server
                 }
-            },
+                // Few more things we can do here:
+                // For example: Update the location of user on server
+            }
+        }
+        fusedLocationProviderClient?.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
             Looper.myLooper()
         )
     }
