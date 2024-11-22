@@ -1,17 +1,15 @@
-package com.fahim.uber_quickride
+package com.fahim.uber_quickride.ui.maps
 
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Looper
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.fahim.uber_quickride.R
+import com.fahim.uber_quickride.data.network.NetworkService
 import com.fahim.uber_quickride.databinding.ActivityMapsBinding
-import com.fahim.uber_quickride.simulator.WebSocket
-import com.fahim.uber_quickride.simulator.WebSocketListener
-import com.fahim.uber_quickride.utils.Constants
 import com.fahim.uber_quickride.utils.MapUtils
 import com.fahim.uber_quickride.utils.PermissionUtils
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -27,17 +25,16 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
-import org.json.JSONObject
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback, WebSocketListener {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
     companion object {
         private const val TAG = "MapsActivity"
         private const val LOCATION_PERMISSION_REQUEST_CODE = 999
     }
 
-    private lateinit var mMap: GoogleMap
+    private lateinit var presenter: MapsPresenter
+    private lateinit var googleMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
-    private lateinit var webSocket: WebSocket
     private var currentLatLng: LatLng? = null
     private val nearbyCabMarkerList = arrayListOf<Marker>()
     private var fusedLocationProviderClient: FusedLocationProviderClient? = null
@@ -54,7 +51,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, WebSocketListener 
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-        initWebSocket()
+        presenter = MapsPresenter(NetworkService())
+        presenter.onAttach(this)
     }
 
     override fun onStart() {
@@ -84,63 +82,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, WebSocketListener 
     }
 
     override fun onDestroy() {
-        webSocket.disconnect()
+        presenter.onDetach()
         fusedLocationProviderClient?.removeLocationUpdates(locationCallback)
         super.onDestroy()
     }
 
-    private fun initWebSocket() {
-        webSocket = WebSocket(this)
-        webSocket.connect()
-    }
 
     override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
-
-        // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        this.googleMap = googleMap
     }
 
-    override fun onConnect() {
-        Log.d(TAG, "onConnect")
-    }
-
-    override fun onDisconnect() {
-        Log.d(TAG, "onDisconnect")
-    }
-
-    override fun onError(error: String) {
-        Log.d(TAG, "onError error : $error")
-    }
-
-    override fun onMessage(data: String) {
-        Log.d(TAG, "onMessage data : $data")
-        runOnUiThread {
-            val jsonObject = JSONObject(data)
-            when (jsonObject.getString(Constants.TYPE)) {
-                Constants.NEAR_BY_CABS -> {
-                    handleOnMessageNearbyCabs(jsonObject)
-                }
-            }
-        }
-    }
-
-    private fun handleOnMessageNearbyCabs(jsonObject: JSONObject) {
-        nearbyCabMarkerList.clear()
-        val jsonArray = jsonObject.getJSONArray(Constants.LOCATIONS)
-        for (i in 0 until jsonArray.length()) {
-            val lat = (jsonArray.get(i) as JSONObject).getDouble(Constants.LAT)
-            val lng = (jsonArray.get(i) as JSONObject).getDouble(Constants.LNG)
-            val latLng = LatLng(lat, lng)
-            val nearbyCabMarker = addCarMarkerAndGet(latLng)
-            nearbyCabMarkerList.add(nearbyCabMarker)
-        }
-    }
 
     private fun addCarMarkerAndGet(latLng: LatLng): Marker {
-        return mMap.addMarker(
+        return googleMap.addMarker(
             MarkerOptions().position(latLng).flat(true)
                 .icon(BitmapDescriptorFactory.fromBitmap(MapUtils.getCarBitmap(this)))
         )!!
@@ -157,7 +111,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, WebSocketListener 
         ) {
             return
         }
-        mMap.isMyLocationEnabled = true
+        googleMap.isMyLocationEnabled = true
     }
 
     private fun setUpLocationListener() {
@@ -185,7 +139,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, WebSocketListener 
                         enableMyLocationOnMap()
                         moveCamera(currentLatLng)
                         animateCamera(currentLatLng)
-                        requestNearbyCabs()
+                        presenter.requestNearbyCabs(currentLatLng!!)
                     }
                 }
                 // Few more things we can do here:
@@ -200,11 +154,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, WebSocketListener 
     }
 
     private fun moveCamera(latLng: LatLng?) {
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng!!))
+        googleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng!!))
     }
 
     private fun animateCamera(latLng: LatLng?) {
-        mMap.animateCamera(
+        googleMap.animateCamera(
             CameraUpdateFactory.newCameraPosition(
                 CameraPosition.Builder().target(
                     latLng!!
@@ -213,13 +167,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, WebSocketListener 
         )
     }
 
-    private fun requestNearbyCabs() {
-        val jsonObject = JSONObject()
-        jsonObject.put(Constants.TYPE, Constants.NEAR_BY_CABS)
-        jsonObject.put(Constants.LAT, currentLatLng!!.latitude)
-        jsonObject.put(Constants.LNG, currentLatLng!!.longitude)
-        webSocket.sendMessage(jsonObject.toString())
-    }
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -247,6 +194,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, WebSocketListener 
                     ).show()
                 }
             }
+        }
+    }
+
+    override fun showNearbyCabs(latLngList: List<LatLng>) {
+        nearbyCabMarkerList.clear()
+        for (latLng in latLngList) {
+            val nearbyCabMarker = addCarMarkerAndGet(latLng)
+            nearbyCabMarkerList.add(nearbyCabMarker)
         }
     }
 
