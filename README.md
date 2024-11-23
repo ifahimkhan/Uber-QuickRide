@@ -16,7 +16,7 @@ Learn to build a Uber Android Clone App - Open-Source Project
 * On-going trip UI
 * Trip End
 * Animation like Uber App for Moving Car
-* Just to make it simple. This project uses the basic MVP Architecture for building the Uber and Lyft clone
+* Just to make it simple. This project uses the basic MVP Architecture for building the Uber clone
 * We have simulated the WebSocket API for you 
 
 ## We have simulated the backend environment for you to get the real-work like experience.
