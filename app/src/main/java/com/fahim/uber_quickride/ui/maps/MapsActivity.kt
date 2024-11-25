@@ -25,11 +25,18 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
+
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
     companion object {
         private const val TAG = "MapsActivity"
         private const val LOCATION_PERMISSION_REQUEST_CODE = 999
+        private const val PICKUP_REQUEST_CODE = 1
+        private const val DROP_REQUEST_CODE = 2
+
     }
 
     private lateinit var presenter: MapsPresenter
@@ -39,6 +46,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
     private val nearbyCabMarkerList = arrayListOf<Marker>()
     private var fusedLocationProviderClient: FusedLocationProviderClient? = null
     private lateinit var locationCallback: LocationCallback
+    private var pickUpLatLng: LatLng? = null
+    private var dropLatLng: LatLng? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,6 +62,28 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
         mapFragment.getMapAsync(this)
         presenter = MapsPresenter(NetworkService())
         presenter.onAttach(this)
+        setUpClickListener()
+
+    }
+
+    private fun setUpClickListener() {
+        binding.pickUpTextView.setOnClickListener {
+            launchLocationAutoCompleteActivity(PICKUP_REQUEST_CODE)
+        }
+        binding.dropTextView.setOnClickListener {
+            launchLocationAutoCompleteActivity(DROP_REQUEST_CODE)
+        }
+    }
+    private fun launchLocationAutoCompleteActivity(requestCode: Int) {
+        val fields: List<Place.Field> =
+            listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG)
+        val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
+            .build(this)
+        startActivityForResult(intent, requestCode)
+    }
+    private fun setCurrentLocationAsPickUp() {
+        pickUpLatLng = currentLatLng
+        binding.pickUpTextView.text = getString(R.string.current_location)
     }
 
     override fun onStart() {
@@ -136,6 +167,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
                 if (currentLatLng == null) {
                     for (location in locationResult.locations) {
                         currentLatLng = LatLng(location.latitude, location.longitude)
+                        setCurrentLocationAsPickUp()
                         enableMyLocationOnMap()
                         moveCamera(currentLatLng)
                         animateCamera(currentLatLng)
