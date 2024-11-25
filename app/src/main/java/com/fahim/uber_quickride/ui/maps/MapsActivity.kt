@@ -1,9 +1,12 @@
 package com.fahim.uber_quickride.ui.maps
 
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -12,6 +15,7 @@ import com.fahim.uber_quickride.data.network.NetworkService
 import com.fahim.uber_quickride.databinding.ActivityMapsBinding
 import com.fahim.uber_quickride.utils.MapUtils
 import com.fahim.uber_quickride.utils.PermissionUtils
+import com.google.android.gms.common.api.Status
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -27,6 +31,7 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.AutocompleteActivity
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 
 
@@ -74,6 +79,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
             launchLocationAutoCompleteActivity(DROP_REQUEST_CODE)
         }
     }
+
     private fun launchLocationAutoCompleteActivity(requestCode: Int) {
         val fields: List<Place.Field> =
             listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG)
@@ -81,6 +87,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
             .build(this)
         startActivityForResult(intent, requestCode)
     }
+
     private fun setCurrentLocationAsPickUp() {
         pickUpLatLng = currentLatLng
         binding.pickUpTextView.text = getString(R.string.current_location)
@@ -224,6 +231,38 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
                         getString(R.string.location_permission_not_granted),
                         Toast.LENGTH_LONG
                     ).show()
+                }
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == PICKUP_REQUEST_CODE || requestCode == DROP_REQUEST_CODE) {
+            when (resultCode) {
+                Activity.RESULT_OK -> {
+                    val place = Autocomplete.getPlaceFromIntent(data!!)
+                    Log.d(TAG, "Place: " + place.name + ", " + place.id + ", " + place.latLng)
+                    when (requestCode) {
+                        PICKUP_REQUEST_CODE -> {
+                            binding.pickUpTextView.text = place.name
+                            pickUpLatLng = place.latLng
+                        }
+
+                        DROP_REQUEST_CODE -> {
+                            binding.dropTextView.text = place.name
+                            dropLatLng = place.latLng
+                        }
+                    }
+                }
+
+                AutocompleteActivity.RESULT_ERROR -> {
+                    val status: Status = Autocomplete.getStatusFromIntent(data!!)
+                    Log.d(TAG, status.statusMessage!!)
+                }
+
+                Activity.RESULT_CANCELED -> {
+                    Log.d(TAG, "Place Selection Canceled")
                 }
             }
         }
