@@ -8,5 +8,6 @@
     <string name="current_location">Current Location</string>
     <string name="where_to">Where to?</string>
     <string name="pickup_location">Pickup Location</string>
+    <string name="request_cab">Request Cab</string>
 
 </resources>

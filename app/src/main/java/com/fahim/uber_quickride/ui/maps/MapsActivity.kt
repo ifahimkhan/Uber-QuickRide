@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -77,6 +78,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
         }
         binding.dropTextView.setOnClickListener {
             launchLocationAutoCompleteActivity(DROP_REQUEST_CODE)
+        }
+        binding.requestCabButton.setOnClickListener{
+
+        }
+    }
+    private fun checkAndShowRequestButton() {
+        if (pickUpLatLng !== null && dropLatLng !== null) {
+            binding.requestCabButton.visibility = View.VISIBLE
         }
     }
 
@@ -247,11 +256,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
                         PICKUP_REQUEST_CODE -> {
                             binding.pickUpTextView.text = place.name
                             pickUpLatLng = place.latLng
+                            checkAndShowRequestButton()
                         }
 
                         DROP_REQUEST_CODE -> {
                             binding.dropTextView.text = place.name
                             dropLatLng = place.latLng
+                            checkAndShowRequestButton()
                         }
                     }
                 }
