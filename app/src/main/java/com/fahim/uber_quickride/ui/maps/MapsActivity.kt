@@ -16,6 +16,7 @@ import com.fahim.uber_quickride.data.network.NetworkService
 import com.fahim.uber_quickride.databinding.ActivityMapsBinding
 import com.fahim.uber_quickride.utils.MapUtils
 import com.fahim.uber_quickride.utils.PermissionUtils
+import com.fahim.uber_quickride.utils.ViewUtils
 import com.google.android.gms.common.api.Status
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -61,6 +62,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
 
         binding = ActivityMapsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        ViewUtils.enableTransparentStatusBar(window)
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
@@ -147,20 +149,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
         )!!
     }
 
-    private fun enableMyLocationOnMap() {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
-        googleMap.isMyLocationEnabled = true
-    }
-
     private fun setUpLocationListener() {
         fusedLocationProviderClient = FusedLocationProviderClient(this)
         // for getting the current location update after every 2 seconds
@@ -184,7 +172,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
                     for (location in locationResult.locations) {
                         currentLatLng = LatLng(location.latitude, location.longitude)
                         setCurrentLocationAsPickUp()
-                        enableMyLocationOnMap()
                         moveCamera(currentLatLng)
                         animateCamera(currentLatLng)
                         presenter.requestNearbyCabs(currentLatLng!!)
