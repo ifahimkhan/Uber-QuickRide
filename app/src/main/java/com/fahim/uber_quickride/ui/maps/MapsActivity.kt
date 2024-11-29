@@ -81,10 +81,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
         binding.dropTextView.setOnClickListener {
             launchLocationAutoCompleteActivity(DROP_REQUEST_CODE)
         }
-        binding.requestCabButton.setOnClickListener{
+        binding.requestCabButton.setOnClickListener {
 
         }
     }
+
     private fun checkAndShowRequestButton() {
         if (pickUpLatLng !== null && dropLatLng !== null) {
             binding.requestCabButton.visibility = View.VISIBLE
@@ -172,6 +173,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
                     for (location in locationResult.locations) {
                         currentLatLng = LatLng(location.latitude, location.longitude)
                         setCurrentLocationAsPickUp()
+                        enableMyLocationOnMap()
                         moveCamera(currentLatLng)
                         animateCamera(currentLatLng)
                         presenter.requestNearbyCabs(currentLatLng!!)
@@ -187,6 +189,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
             Looper.myLooper()
         )
     }
+
+    private fun enableMyLocationOnMap() {
+        googleMap.setPadding(0, ViewUtils.dpToPx(48f), 0, 0)
+        googleMap.isMyLocationEnabled = true
+    }
+
 
     private fun moveCamera(latLng: LatLng?) {
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng!!))
