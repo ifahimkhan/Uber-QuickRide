@@ -95,7 +95,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, MapsView {
     private fun launchLocationAutoCompleteActivity(requestCode: Int) {
         val fields: List<Place.Field> =
             listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG)
-        val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, fields)
+        val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fields)
             .build(this)
         startActivityForResult(intent, requestCode)
     }
