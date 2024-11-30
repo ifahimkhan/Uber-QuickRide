@@ -1,5 +1,6 @@
 package com.fahim.uber_quickride.simulator
 
+import com.google.maps.model.LatLng
 import org.json.JSONObject
 
 class WebSocket(private var webSocketListener: WebSocketListener) {
@@ -18,18 +19,11 @@ class WebSocket(private var webSocketListener: WebSocketListener) {
                     webSocketListener
                 )
             }
-
             "requestCab" -> {
                 val pickUpLatLng =
-                    com.google.maps.model.LatLng(
-                        jsonObject.getDouble("pickUpLat"),
-                        jsonObject.getDouble("pickUpLng")
-                    )
+                    LatLng(jsonObject.getDouble("pickUpLat"), jsonObject.getDouble("pickUpLng"))
                 val dropLatLng =
-                    com.google.maps.model.LatLng(
-                        jsonObject.getDouble("dropLat"),
-                        jsonObject.getDouble("dropLng")
-                    )
+                    LatLng(jsonObject.getDouble("dropLat"), jsonObject.getDouble("dropLng"))
                 Simulator.requestCab(
                     pickUpLatLng,
                     dropLatLng,
@@ -37,11 +31,11 @@ class WebSocket(private var webSocketListener: WebSocketListener) {
                 )
             }
         }
-
     }
+
     fun disconnect() {
         Simulator.stopTimer()
-        webSocketListener.onDisconnect()
-
+        this.webSocketListener.onDisconnect()
     }
+
 }
